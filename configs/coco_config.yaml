@@ -17,6 +17,22 @@ train_params:
   use_ema: false                  # whether to maintain moving average of superglue model weights that will be used in testing and inference
   init_seed: 10
 
+superglue_params:
+  sinkhorn_iterations: 100
+  match_threshold: 0.2
+  num_layers: 9
+  restore_path: #path to the ckpt from which training should be resumed
+  use_layernorm: false #whether to use layernorm instead of batchnorm in the MLP layer
+  bin_value: 1.0 #initial value for dustbin in assignment
+  pos_loss_weight: 0.45 #weightage for positive(matched points) components of loss
+  neg_loss_weight: 1.0 #weightage for negative(non-matched points) component of loss
+
+superpoint_params:
+  nms_radius: 4
+  max_keypoints: 512
+  keypoint_threshold: 0.0
+  remove_borders: 4
+
 RA_MMIR_params:
   sinkhorn_iterations: 20
   match_threshold: 0.4
@@ -58,7 +74,7 @@ optimizer_params:
   step_value: 0.9440608762859234  # Determines the decay rate of learning rate after step_epoch. Curr value is for 40 epochs after which init lr will be divided by 10
 
 dataset_params:
-  dataset_path: "L:\\dataset\\COCO\\"                # Path to COCO dataset that contains the 'train2017', 'val2017' and 'annotations' folder
+  dataset_path: "E:\\program\\dataset\\coco2017\\coco"                # Path to COCO dataset that contains the 'train2017', 'val2017' and 'annotations' folder
   apply_color_aug: true           # whether to apply photometric distortions
   image_height: 480 
   image_width: 640
