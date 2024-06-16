@@ -77,7 +77,7 @@ optimizer_params:
   step_epoch: 25
   step_value: 0.9440608762859234
 dataset_params:
-  dataset_path: E:\program\dataset\coco2017\coco
+  dataset_path: D:\ProgramFiles\dataset\coco
   apply_color_aug: true
   image_height: 480
   image_width: 640
