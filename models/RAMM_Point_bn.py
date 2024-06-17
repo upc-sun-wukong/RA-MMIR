@@ -84,9 +84,10 @@ class RAMM_Point(torch.nn.Module):
                                               grid_size=grid_size, using_bn=using_bn)
 
 
-        path = Path(__file__).parent / '.\\weights\\superpoint_coco_emau_feature_3090.pth'
+        # path = Path(__file__).parent / '.\\weights\\superpoint_coco_emau_feature_3090.pth'
+        path = Path(__file__).parent / '.\\weights\\superglue_cocohomo.pt' #换成这个试试
 
-        self.load_state_dict(torch.load(str(path)))
+        self.load_state_dict(torch.load(str(path)) ,strict= False)  #忽略缺失参数
 
         mk = config['max_keypoints']
         if mk == 0 or mk < -1:
