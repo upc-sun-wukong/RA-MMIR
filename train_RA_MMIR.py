@@ -19,12 +19,15 @@ import numpy as np
 from models.RAMM_Point_bn import RAMM_Point
 from models.RA_MMIR import RA_MMIR
 
-from utils.common import increment_path, init_seeds, clean_checkpoint, reduce_tensor, download_base_files, debug_image_plot, time_synchronized, test_model, ModelEMA
+from utils.common import increment_path, init_seeds, clean_checkpoint, reduce_tensor, debug_image_plot, \
+    time_synchronized, test_model, ModelEMA
+from utils.common import download_base_files
 from utils.preprocess_utils import torch_find_matches
 from utils.dataset import COCO_loader, COCO_valloader, collate_batch
 from torch.utils.tensorboard import SummaryWriter
 
 import lpips
+
 
 # torch.cuda.set_device(1)
 
@@ -33,7 +36,8 @@ import lpips
 def change_lr(epoch, config, optimizer):
     if epoch >= config['optimizer_params']['step_epoch']:
         curr_lr = config['optimizer_params']['lr']
-        changed_lr = curr_lr * (config['optimizer_params']['step_value'] ** (epoch-config['optimizer_params']['step_epoch']))
+        changed_lr = curr_lr * (
+                    config['optimizer_params']['step_value'] ** (epoch - config['optimizer_params']['step_epoch']))
     else:
         changed_lr = config['optimizer_params']['lr']
     for g in optimizer.param_groups:
@@ -41,21 +45,22 @@ def change_lr(epoch, config, optimizer):
         c_lr = g['lr']
         print("Changed learning rate to {}".format(c_lr))
 
+
 def train(config, rank):
     is_distributed = (rank >= 0)
     save_dir = Path(config['train_params']['save_dir'])
     weight_dir = save_dir / "weights"
     weight_dir.mkdir(parents=True, exist_ok=True)
     batch_size = config['train_params']['batch_size']
-    results_file = None 
+    results_file = None
     if rank in [0, -1]: results_file = open(save_dir / "results.txt", 'a')
     with open(save_dir / 'config.yaml', 'w') as file:
         yaml.dump(config, file, sort_keys=False)
     init_seeds(rank + config['train_params']['init_seed'])
     config['superglue_params']['GNN_layers'] = ['self', 'cross'] * config['superglue_params']['num_layers']
 
-    loss_IS_alex = lpips.LPIPS(net = 'alex').to(device)
-    loss_IS_vgg = lpips.LPIPS(net = 'vgg').to(device)
+    loss_IS_alex = lpips.LPIPS(net='alex').to(device)
+    loss_IS_vgg = lpips.LPIPS(net='vgg').to(device)
 
     RA_MMIR_model = RA_MMIR(config['RA_MMIR_params']).to(device)
     RAMM_Point_model = RAMM_Point(config['RAMM_Point_params']).to(device)
@@ -66,8 +71,9 @@ def train(config, rank):
 
     start_epoch = config['train_params']['start_epoch'] if config['train_params']['start_epoch'] > -1 else 0
     if config['superglue_params']['restore_path']:
-        restore_dict = torch.load(config['superglue_params']['restore_path'], map_location = device)
-        RA_MMIR_model.load_state_dict(clean_checkpoint(restore_dict['model'] if 'model' in restore_dict else restore_dict))
+        restore_dict = torch.load(config['superglue_params']['restore_path'], map_location=device)
+        RA_MMIR_model.load_state_dict(
+            clean_checkpoint(restore_dict['model'] if 'model' in restore_dict else restore_dict))
         print("Restored model weights..")
         if config['train_params']['start_epoch'] < 0:
             start_epoch = restore_dict['epoch'] + 1
@@ -76,7 +82,7 @@ def train(config, rank):
     pg0, pg1, pg2 = [], [], []
     for k, v in RA_MMIR_model.named_modules():
         if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):
-            pg2.append(v.bias)    # biases
+            pg2.append(v.bias)  # biases
         if hasattr(v, 'bin_score'):
             pg0.append(v.bin_score)
         if isinstance(v, nn.BatchNorm2d) or isinstance(v, nn.BatchNorm1d) or isinstance(v, nn.SyncBatchNorm):
@@ -85,12 +91,13 @@ def train(config, rank):
             pg1.append(v.weight)  # apply decay
 
     if config['optimizer_params']['opt_type'].lower() == "adam":
-        optimizer = optim.Adam(pg0, lr=config['optimizer_params']['lr'], betas=(0.9, 0.999))                    # adjust beta1 to momentum;
+        optimizer = optim.Adam(pg0, lr=config['optimizer_params']['lr'],
+                               betas=(0.9, 0.999))  # adjust beta1 to momentum;
     else:
         optimizer = optim.SGD(pg0, lr=config['optimizer_params']['lr'], momentum=0.9, nesterov=True)
 
     optimizer.add_param_group({'params': pg1, 'weight_decay': config['optimizer_params']['weight_decay']})
-    optimizer.add_param_group({'params': pg2}) 
+    optimizer.add_param_group({'params': pg2})
     print('Optimizer groups: %g .bias, %g conv.weight, %g other' % (len(pg2), len(pg1), len(pg0)))
     del pg0, pg1, pg2
     if config['superglue_params']['restore_path']:
@@ -110,19 +117,19 @@ def train(config, rank):
     train_dataset = COCO_loader(config['dataset_params'], typ="train")
     sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True) if is_distributed else None
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=config['train_params']['batch_size'],
-                                            num_workers=config['train_params']['num_workers'],
-                                            shuffle = False if is_distributed else True,
-                                            sampler=sampler,
-                                            collate_fn=collate_batch,
-                                            pin_memory=True)
+                                                   num_workers=config['train_params']['num_workers'],
+                                                   shuffle=False if is_distributed else True,
+                                                   sampler=sampler,
+                                                   collate_fn=collate_batch,
+                                                   pin_memory=True)
     num_batches = len(train_dataloader)
     if rank in [-1, 0]:
         val_dataset = COCO_valloader(config['dataset_params'])
         val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1,
-                                            num_workers=0,
-                                            sampler=None,
-                                            collate_fn=collate_batch,
-                                            pin_memory=True)
+                                                     num_workers=0,
+                                                     sampler=None,
+                                                     collate_fn=collate_batch,
+                                                     pin_memory=True)
 
     start_time = time.time()
     num_epochs = config['train_params']['num_epochs']
@@ -142,7 +149,8 @@ def train(config, rank):
             pbar = tqdm(pbar, total=num_batches)
         optimizer.zero_grad()
         mloss = torch.zeros(6, device=device)
-        if rank in [-1, 0]: print(('\n' + '%10s' * 9) % ('Epoch', 'gpu_mem', 'Iteration', 'PosLoss', 'NegLoss', 'TotLoss', 'Dtime', 'Ptime', 'Mtime'))
+        if rank in [-1, 0]: print(('\n' + '%10s' * 9) % (
+        'Epoch', 'gpu_mem', 'Iteration', 'PosLoss', 'NegLoss', 'TotLoss', 'Dtime', 'Ptime', 'Mtime'))
         t5 = time_synchronized()
         for i, (orig_warped, warped, homographies) in pbar:
             ni = i + num_batches * epoch
@@ -161,7 +169,10 @@ def train(config, rank):
             midpoint = len(orig_warped) // 2
 
             with torch.no_grad():
-                all_match_index_0, all_match_index_1, all_match_index_2 = torch.empty(0, dtype=torch.int64, device=homographies.device), torch.empty(0, dtype=torch.int64, device=homographies.device), torch.empty(0, dtype=torch.int64, device=homographies.device)
+                all_match_index_0, all_match_index_1, all_match_index_2 = torch.empty(0, dtype=torch.int64,
+                                                                                      device=homographies.device), torch.empty(
+                    0, dtype=torch.int64, device=homographies.device), torch.empty(0, dtype=torch.int64,
+                                                                                   device=homographies.device)
                 t2 = time_synchronized()
 
                 superpoint_results = RAMM_Point_model.forward_train({'homography': homographies, 'image': orig_warped})
@@ -178,15 +189,23 @@ def train(config, rank):
                 ma_1_lis = []
 
                 for k in range(midpoint):
-                    ma_0, ma_1, miss_0, miss_1 = torch_find_matches(keypoints0[k], keypoints1[k], homographies[k], dist_thresh=3, n_iters=1)
+                    ma_0, ma_1, miss_0, miss_1 = torch_find_matches(keypoints0[k], keypoints1[k], homographies[k],
+                                                                    dist_thresh=3, n_iters=1)
                     ma_0_lis.append(ma_0)
                     ma_1_lis.append(ma_1)
-                    all_match_index_0 = torch.cat([all_match_index_0, torch.empty(len(ma_0) + len(miss_0) + len(miss_1), dtype=torch.long, device=ma_0.device).fill_(k)])
-                    all_match_index_1 = torch.cat([all_match_index_1, ma_0, miss_0, torch.empty(len(miss_1), dtype=torch.long, device=miss_1.device).fill_(-1)])
-                    all_match_index_2 = torch.cat([all_match_index_2, ma_1, torch.empty(len(miss_0), dtype=torch.long, device=miss_0.device).fill_(-1), miss_1])
+                    all_match_index_0 = torch.cat([all_match_index_0,
+                                                   torch.empty(len(ma_0) + len(miss_0) + len(miss_1), dtype=torch.long,
+                                                               device=ma_0.device).fill_(k)])
+                    all_match_index_1 = torch.cat([all_match_index_1, ma_0, miss_0,
+                                                   torch.empty(len(miss_1), dtype=torch.long,
+                                                               device=miss_1.device).fill_(-1)])
+                    all_match_index_2 = torch.cat([all_match_index_2, ma_1, torch.empty(len(miss_0), dtype=torch.long,
+                                                                                        device=miss_0.device).fill_(-1),
+                                                   miss_1])
 
                 if config['train_params']['debug'] and (i < config['train_params']['debug_iters']):
-                    debug_image_plot(config['train_params']['debug_path'], keypoints0[k], keypoints1[k], ma_0, ma_1, images0[-1], images1[-1], epoch, i)
+                    debug_image_plot(config['train_params']['debug_path'], keypoints0[k], keypoints1[k], ma_0, ma_1,
+                                     images0[-1], images1[-1], epoch, i)
 
                 match_indexes = torch.stack([all_match_index_0, all_match_index_1, all_match_index_2], -1)
                 gt_vector = torch.ones(len(match_indexes), dtype=torch.float32, device=match_indexes.device)
@@ -204,7 +223,9 @@ def train(config, rank):
                 'gt_vec': gt_vector
             }
 
-            total_loss, pos_loss, neg_loss, tps_target_imgs, warped_imgs, scorce_imgs = RA_MMIR_model(superglue_input, **{'mode': 'train'})
+            total_loss, pos_loss, neg_loss, tps_target_imgs, warped_imgs, scorce_imgs = RA_MMIR_model(superglue_input,
+                                                                                                      **{
+                                                                                                          'mode': 'train'})
 
             loss_SI_LPIPS = []
             # loss_SI_SISM = []
@@ -235,7 +256,9 @@ def train(config, rank):
 
             if ema:
                 ema.update(RA_MMIR_model)
-            data_time, preprocess_time, model_time = torch.tensor(t1 - t5, device=device), torch.tensor(t3-t2, device=device), torch.tensor(t4-t3, device=device)
+            data_time, preprocess_time, model_time = torch.tensor(t1 - t5, device=device), torch.tensor(t3 - t2,
+                                                                                                        device=device), torch.tensor(
+                t4 - t3, device=device)
             loss_items = torch.stack((pos_loss, neg_loss, total_loss, data_time, preprocess_time, model_time)).detach()
 
             if is_distributed:
@@ -245,10 +268,10 @@ def train(config, rank):
                 mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)
                 s = ('%10s' * 2 + '%10.4g' * 7) % (str(epoch), mem, i, *mloss)
                 pbar.set_description(s)
-                if ((i+1) % config['train_params']['log_interval']) == 0:
+                if ((i + 1) % config['train_params']['log_interval']) == 0:
                     write_str = "Epoch: {} Iter: {}, Loss: {}\n".format(epoch, i, mloss[0].item())
                     results_file.write(write_str)
-                if ((i+1) % 2000) == 0:
+                if ((i + 1) % 2000) == 0:
                     ckpt = {'epoch': epoch,
                             'iter': i,
                             'ema': ema.ema.state_dict() if ema else None,
@@ -266,7 +289,8 @@ def train(config, rank):
                     eval_superglue = ema.ema
                 else:
                     eval_superglue = RA_MMIR_model.module if is_distributed else RA_MMIR_model
-                results = test_model(val_dataloader, RAMM_Point_model, eval_superglue, config['train_params']['val_images_count'], device)
+                results = test_model(val_dataloader, RAMM_Point_model, eval_superglue,
+                                     config['train_params']['val_images_count'], device)
             ckpt = {'epoch': epoch,
                     'iter': -1,
                     'ema': ema.ema.state_dict() if ema else None,
@@ -306,16 +330,18 @@ if __name__ == "__main__":
             torch.cuda.set_device(device)
     with open(opt.config_path, 'r') as file:
         config = yaml.full_load(file)
-    config["train_params"]['save_dir'] = increment_path(Path(config['train_params']['output_dir']) / config['train_params']['experiment_name'])
+    config["train_params"]['save_dir'] = increment_path(
+        Path(config['train_params']['output_dir']) / config['train_params']['experiment_name'])
     if opt.local_rank in [0, -1]:
         for i, k in config.items():
             print("{}: ".format(i))
             print(k)
-    
+
     download_base_files()
     use_wandb = False
     if config['train_params']['use_wandb']:
         import wandb
+
         wandb.init(name=config['train_params']['experiment_tag'], config=config, notes="train", project="superglue")
         use_wandb = True
     train(config, opt.local_rank)

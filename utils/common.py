@@ -39,6 +39,26 @@ def increment_path(path, exist_ok=True, sep=''):
         n = max(i) + 1 if i else 2  # increment number
         return f"{path}{sep}{n}"  # update path
 
+
+def download_base_files():
+    base_files = {
+        "data_file": "https://github.com/gouthamk1998/files/releases/download/1.0/coco_test_images.zip",
+                     #"http://example.com/data.zip",
+        "model_weights": "https://raw.githubusercontent.com/magicleap/SuperGluePretrainedNetwork/master/models/weights/superpoint_v1.pth"
+                         #"http://example.com/model_weights.pth"
+    }
+
+    os.makedirs("base_files", exist_ok=True)
+
+    for file_name, url in base_files.items():
+        local_path = os.path.join("base_files", os.path.basename(url))
+        if not os.path.exists(local_path):
+            print(f"Downloading {file_name} from {url}...")
+            urllib.request.urlretrieve(url, local_path)
+            print(f"{file_name} downloaded to {local_path}")
+        else:
+            print(f"{file_name} already exists at {local_path}")
+
 def time_synchronized():
     if torch.cuda.is_available():
         torch.cuda.synchronize()
