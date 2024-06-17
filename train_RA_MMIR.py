@@ -19,8 +19,9 @@ import numpy as np
 from models.RAMM_Point_bn import RAMM_Point
 from models.RA_MMIR import RA_MMIR
 
-from utils.common import increment_path, init_seeds, clean_checkpoint, reduce_tensor, debug_image_plot, \
-    time_synchronized, test_model, ModelEMA
+
+from utils.common import increment_path, init_seeds, clean_checkpoint, reduce_tensor, debug_image_plot, time_synchronized, test_model, ModelEMA
+
 from utils.common import download_base_files
 from utils.preprocess_utils import torch_find_matches
 from utils.dataset import COCO_loader, COCO_valloader, collate_batch
