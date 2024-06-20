@@ -6,12 +6,18 @@ from pathlib import Path
 import settings
 import torch.nn.functional as F
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+
+# 返回前k个最好的特征点
 def top_k_keypoints(keypoints, scores, k: int):
     if k >= len(keypoints):
         return keypoints, scores
     scores, indices = torch.topk(scores, k, dim=0)
     return keypoints[indices], scores
 
+#移除太靠近边界的特征点
 def remove_borders(keypoints, scores, border: int, height: int, width: int):
     """ Removes keypoints too close to the border """
     mask_w = (keypoints[:, 0] >= border) & (keypoints[:, 0] < (width - border))
@@ -51,6 +57,7 @@ def sample_descriptors(keypoints, descriptors, s: int = 8):
         descriptors.reshape(b, c, -1), p=2, dim=1)
     return descriptors
 
+# SuperPoint网络的Pytorch定义
 class RAMM_Point(torch.nn.Module):
     """ Pytorch definition of SuperPoint Network.
         SuperPoint网络的Pytorch定义。
@@ -164,11 +171,50 @@ class RAMM_Point(torch.nn.Module):
         else:
             feat_map, att_class = self.backbone(data)
 
+        # 打印特征图和注意力分类的形状
+        # print('Feature map shape:', feat_map.shape)
+        # print('Attention classification shape:', att_class.shape)
+        # 可视化特征图的一个通道
+        mpl.use('module://backend_interagg')
+
+        channels, num_images, height, width = feat_map.shape
+        # 创建一个包含128个子图的图像窗口，8行16列布局
+        fig, axes = plt.subplots(8, 16, figsize=(20, 10))  # 调整窗口大小
+        for i in range(128):
+            ax = axes[i // 16, i % 16]  # 计算当前图像的位置
+            # ax.imshow(feat_map[0, i, :, :].permute(1, 2, 0).cpu().numpy(), cmap='viridis')#转为RGB显示多通道
+            ax.imshow(feat_map[0, i, :, :].cpu().numpy(), cmap='viridis')  # 转为RGB显示多通道
+            ax.axis('off')  # 隐藏坐标轴
+            # plt.colorbar()
+
+        plt.tight_layout()  # 自动调整子图间距
+        plt.show()
+
+        # 可视化注意力分类图
+        plt.imshow(att_class[0, 0, :, :].cpu().numpy(), cmap='hot')
+        plt.colorbar()
+        plt.show()
+
         """RAMM_Gauge_Field"""
         pred = att_class.max(dim=1)[1]
         pred = pred.permute(1, 2, 0)
         w, h, c = pred.size()
+        # plt.imshow(pred[:, : ,0].cpu().numpy(), cmap='hot')
+        # plt.colorbar()
+        # plt.show()
+        # plt.imshow(pred[:, : ,1].cpu().numpy(), cmap='hot')
+        # plt.colorbar()
+        # plt.show()
+        # plt.imshow(pred[:, : ,2].cpu().numpy(), cmap='hot')
+        # plt.colorbar()
+        # plt.show()
+        # plt.imshow(pred[:, : ,3].cpu().numpy(), cmap='hot')
+        # plt.colorbar()
+        # plt.show()
+
+        pred = pred[:, :, 0:1]
         pred = pred.expand(w, h, 1)
+        print(pred.shape)
         pred_mask = pred.permute(2, 0, 1)
 
         pred = pred_mask.unsqueeze(0)
