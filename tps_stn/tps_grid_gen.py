@@ -43,7 +43,12 @@ class TPSGridGen(nn.Module):
         forward_kernel[-2:, :N].copy_(target_control_points.transpose(0, 1))
 
         # compute inverse matrix; 计算逆矩阵;
-        inverse_kernel = torch.inverse(forward_kernel)                                                     # [N + 3, N + 3]
+        # inverse_kernel = torch.inverse(forward_kernel)                                                     # [N + 3, N + 3]
+        try:
+            inverse_kernel = torch.inverse(forward_kernel)
+        except RuntimeError as e:
+            print("Matrix is singular and cannot be inverted:", e)
+            # 处理奇异矩阵的逻辑
         # print(inverse_kernel.size())
 
         # create target cordinate matrix; 创建目标坐标(协调)矩阵;
