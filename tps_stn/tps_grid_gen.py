@@ -48,6 +48,8 @@ class TPSGridGen(nn.Module):
             inverse_kernel = torch.inverse(forward_kernel)
         except RuntimeError as e:
             print("Matrix is singular and cannot be inverted:", e)
+            print(f"Error calculating inverse_kernel: {e}")
+            inverse_kernel = torch.zeros_like(forward_kernel)  # 给 inverse_kernel 赋一个默认
             # 处理奇异矩阵的逻辑
         # print(inverse_kernel.size())
 
