@@ -175,25 +175,24 @@ class RAMM_Point(torch.nn.Module):
         # print('Feature map shape:', feat_map.shape)
         # print('Attention classification shape:', att_class.shape)
         # 可视化特征图的一个通道
-        mpl.use('module://backend_interagg')
+        # mpl.use('module://backend_interagg')
 
         channels, num_images, height, width = feat_map.shape
         # 创建一个包含128个子图的图像窗口，8行16列布局
-        fig, axes = plt.subplots(8, 16, figsize=(20, 10))  # 调整窗口大小
-        for i in range(128):
-            ax = axes[i // 16, i % 16]  # 计算当前图像的位置
-            # ax.imshow(feat_map[0, i, :, :].permute(1, 2, 0).cpu().numpy(), cmap='viridis')#转为RGB显示多通道
-            ax.imshow(feat_map[0, i, :, :].cpu().numpy(), cmap='viridis')  # 转为RGB显示多通道
-            ax.axis('off')  # 隐藏坐标轴
+        # fig, axes = plt.subplots(8, 16, figsize=(20, 10))  # 调整窗口大小
+        # for i in range(128):
+        #     ax = axes[i // 16, i % 16]  # 计算当前图像的位置
+        #     ax.imshow(feat_map[0, i, :, :].cpu().numpy(), cmap='viridis')  # 转为RGB显示多通道
+        #     ax.axis('off')  # 隐藏坐标轴
             # plt.colorbar()
 
-        plt.tight_layout()  # 自动调整子图间距
-        plt.show()
+        # plt.tight_layout()  # 自动调整子图间距
+        # plt.show()
 
         # 可视化注意力分类图
-        plt.imshow(att_class[0, 0, :, :].cpu().numpy(), cmap='hot')
-        plt.colorbar()
-        plt.show()
+        # plt.imshow(att_class[0, 0, :, :].cpu().numpy(), cmap='hot')
+        # plt.colorbar()
+        # plt.show()
 
         """RAMM_Gauge_Field"""
         pred = att_class.max(dim=1)[1]
