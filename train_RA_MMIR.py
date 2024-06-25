@@ -208,11 +208,12 @@ def train(config, rank):
 
             loss_SI_LPIPS = []
             # loss_SI_SISM = []
-            if batch_size > len(tps_target_imgs):
-                print(f"batch_size already change from{batch_size} to{len(tps_target_imgs)}!!!!!!!!!!!!!!!!!")
-                batch_size= len(tps_target_imgs)
+            # if batch_size > len(tps_target_imgs):
+            #     print(f"batch_size already change from{batch_size} to{len(tps_target_imgs)}!!!!!!!!!!!!!!!!!")
+            #     batch_size= len(tps_target_imgs)
 
-            for i in range(0, batch_size):
+            # for i in range(0, batch_size):
+            for i in range(0, len(tps_target_imgs)):
                 tps_img = torch.from_numpy(tps_target_imgs[i]).to(device)
                 warped_img = torch.from_numpy(warped_imgs[i]).to(device)
                 print(f"Length of tps_target_imgs: {len(tps_target_imgs)}, Index i: {i}, batch_size:{batch_size}")
@@ -231,7 +232,7 @@ def train(config, rank):
 
             loss_SI_LPIPS_batch = np.array(loss_SI_LPIPS).mean()
 
-            print(total_loss, pos_loss, neg_loss, loss_SI_LPIPS_batch)
+            # print(total_loss, pos_loss, neg_loss, loss_SI_LPIPS_batch)
 
             total_loss.backward()
             optimizer.step()
