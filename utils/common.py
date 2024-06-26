@@ -847,7 +847,7 @@ def test_model(test_loader, superpoint_model, superglue_model, val_count, device
     superpoint_model.eval()
     superglue_model.eval()
     all_recall, all_precision, all_error_dlt, all_error_ransac = [], [], [], []
-    for i_no, (orig_warped, warped_resized, homography) in enumerate(test_loader):                                              # 1111
+    for i_no, (orig_warped, warped_resized, homography) in enumerate(test_loader):                                   # 1111
         if i_no >= val_count:
             break
         orig_image, warped_image = orig_warped[0:1, :, :, :].to(device), orig_warped[1:2, :, :, :].to(device)
