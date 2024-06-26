@@ -15,7 +15,7 @@ class TPS(nn.Module):
         super().__init__()
 
     def forward(self, source_image, source_control_points, target_control_points, color = None):
-        print(source_image.shape)
+        # print(source_image.shape)
         source_image = np.array(source_image).astype('float32')
         source_image = np.expand_dims(source_image.swapaxes(2, 1).swapaxes(1, 0), 0)
 

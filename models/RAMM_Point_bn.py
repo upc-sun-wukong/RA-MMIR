@@ -213,7 +213,7 @@ class RAMM_Point(torch.nn.Module):
 
         pred = pred[:, :, 0:1]
         pred = pred.expand(w, h, 1)
-        print(pred.shape)
+        # print(pred.shape)   终于解决进度条问题
         pred_mask = pred.permute(2, 0, 1)
 
         pred = pred_mask.unsqueeze(0)
@@ -255,7 +255,7 @@ class RAMM_Point(torch.nn.Module):
             without checking any conditions with respect to preexisting keypoints.
             """
             if len(k) < self.config['max_keypoints']:
-                print("Rare condition executed")
+                # print("Rare condition executed")
                 to_add_points = self.config['max_keypoints'] - len(k)
                 random_keypoints = torch.stack([torch.randint(0, w*8, (to_add_points,), dtype=torch.float32, device=k.device), \
                                                 torch.randint(0, h*8, (to_add_points,), dtype=torch.float32, device=k.device)], 1)

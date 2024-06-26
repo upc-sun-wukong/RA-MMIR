@@ -216,7 +216,7 @@ def train(config, rank):
             for i in range(0, len(tps_target_imgs)):
                 tps_img = torch.from_numpy(tps_target_imgs[i]).to(device)
                 warped_img = torch.from_numpy(warped_imgs[i]).to(device)
-                print(f"Length of tps_target_imgs: {len(tps_target_imgs)}, Index i: {i}, batch_size:{batch_size}")
+                # print(f"Length of tps_target_imgs: {len(tps_target_imgs)}, Index i: {i}, batch_size:{batch_size}")
 
                 tps_img = tps_img.transpose(2, 0)
                 warped_img = warped_img.transpose(2, 0)
