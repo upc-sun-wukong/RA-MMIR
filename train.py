@@ -287,6 +287,7 @@ def train(config, rank):
                         wandb.save(str(weight_dir / 'att_emau_coco_feature.pt'))
                 t5 = time_synchronized()
 
+        torch.save(ckpt, weight_dir / 'last_att_emau_coco_feature.pt')
         change_lr(epoch, config, optimizer)
     if rank > 0:
         dist.destroy_process_group()
