@@ -32,7 +32,7 @@ import lpips
 
 # os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-def change_lr(epoch, config, optimizer):
+def change_lr(epoch, config, optimizer):#学习率调度器
     if epoch >= config['optimizer_params']['step_epoch']:
         curr_lr = config['optimizer_params']['lr']
         changed_lr = curr_lr * (
@@ -45,17 +45,20 @@ def change_lr(epoch, config, optimizer):
         print("Changed learning rate to {}".format(c_lr))
 
 
-def train(config, rank):
-    is_distributed = (rank >= 0)
+# def train(config, rank):
+def train(config):
+    # is_distributed = (rank >= 0)
     save_dir = Path(config['train_params']['save_dir'])
     weight_dir = save_dir / "weights"
     weight_dir.mkdir(parents=True, exist_ok=True)
     batch_size = config['train_params']['batch_size']
     results_file = None
-    if rank in [0, -1]: results_file = open(save_dir / "results.txt", 'a')
+
+    results_file = open(save_dir / "results.txt", 'a')
     with open(save_dir / 'config.yaml', 'w') as file:
         yaml.dump(config, file, sort_keys=False)
-    init_seeds(rank + config['train_params']['init_seed'])
+
+    init_seeds(config['train_params']['init_seed'])  # 初始化随机种子
     config['superglue_params']['GNN_layers'] = ['self', 'cross'] * config['superglue_params']['num_layers']
 
     loss_IS_alex = lpips.LPIPS(net='alex').to(device)
@@ -64,7 +67,7 @@ def train(config, rank):
     RA_MMIR_model = RA_MMIR(config['RA_MMIR_params']).to(device)
     RAMM_Point_model = RAMM_Point(config['RAMM_Point_params']).to(device)
 
-    RAMM_Point_model.eval()
+    RAMM_Point_model.eval() #将模型切换到评估模式，禁用 Dropout 和 Batch Normalization
     for _, k in RAMM_Point_model.named_parameters():
         k.requires_grad = False
 
@@ -110,14 +113,23 @@ def train(config, rank):
     #         if ('ema' in restore_dict) and (restore_dict['ema'] is not None):
     #             ema.ema.load_state_dict(restore_dict['ema'])
     #             ema.updates = restore_dict['ema_updates']
-    if is_distributed:
-        RA_MMIR_model = DDP(RA_MMIR_model, device_ids=[rank], output_device=rank)
+
     train_dataset = COCO_loader(config['dataset_params'], typ="train")
-    sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True) if is_distributed else None
+    # sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True) if is_distributed else None
+    # train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=config['train_params']['batch_size'],
+    #                                                num_workers=config['train_params']['num_workers'],
+    #                                                shuffle=False if is_distributed else True,
+    #                                                sampler=sampler,
+    #                                                collate_fn=collate_batch,
+    #                                                pin_memory=True)
+
+
+    # 下面在is_distributed为false时将不执行，即在非分布式训练环境中，不会使用DistributedSampler
+    # sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True) if is_distributed else None
+
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=config['train_params']['batch_size'],
                                                    num_workers=config['train_params']['num_workers'],
-                                                   shuffle=False if is_distributed else True,
-                                                   sampler=sampler,
+                                                   shuffle= True,
                                                    collate_fn=collate_batch,
                                                    pin_memory=True)
     num_batches = len(train_dataloader)
@@ -132,22 +144,22 @@ def train(config, rank):
     start_time = time.time()
     num_epochs = config['train_params']['num_epochs']
     best_val_score = 1e-10
-    if rank in [-1, 0]: print("Started training for {} epochs".format(num_epochs))
+    print("Started training for {} epochs".format(num_epochs))
     print("Number of batches: {}".format(num_batches))
     warmup_iters = config['optimizer_params']['warmup_epochs'] * num_batches
     change_lr(start_epoch, config, optimizer)
 
     for epoch in range(start_epoch, num_epochs):
-        print("Started epoch: {} in rank {}".format(epoch + 1, rank))
+        print("Started epoch: {}".format(epoch + 1))
         RA_MMIR_model.train()
         # if rank != -1:
         #     train_dataloader.sampler.set_epoch(epoch)
         pbar = enumerate(train_dataloader)
-        if rank in [-1, 0]:
-            pbar = tqdm(pbar, total=num_batches)
+
+        pbar = tqdm(pbar, total=num_batches)
         optimizer.zero_grad()
         mloss = torch.zeros(6, device=device)
-        if rank in [-1, 0]: print(('\n' + '%10s' * 9) % (
+        print(('\n' + '%10s' * 9) % (
         'Epoch', 'gpu_mem', 'Iteration', 'PosLoss', 'NegLoss', 'TotLoss', 'Dtime', 'Ptime', 'Mtime'))
         t5 = time_synchronized()
         for i, (orig_warped, warped, homographies) in pbar:
@@ -267,36 +279,35 @@ def train(config, rank):
 
             # if is_distributed:
             #     loss_items = reduce_tensor(loss_items)
-            if rank in [-1, 0]:
-                mloss = (mloss * i + loss_items) / (i + 1)
-                mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)
-                s = ('%10s' * 2 + '%10.4g' * 7) % (str(epoch), mem, i, *mloss)
-                pbar.set_description(s)
-                if ((i + 1) % config['train_params']['log_interval']) == 0:
-                    write_str = "Epoch: {} Iter: {}, Loss: {}\n".format(epoch, i, mloss[0].item())
-                    results_file.write(write_str)
-                if ((i + 1) % 2000) == 0:
-                    ckpt = {'epoch': epoch,
+
+            mloss = (mloss * i + loss_items) / (i + 1)
+            mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)
+            s = ('%10s' * 2 + '%10.4g' * 7) % (str(epoch), mem, i, *mloss)
+            pbar.set_description(s)
+            if ((i + 1) % config['train_params']['log_interval']) == 0:
+                write_str = "Epoch: {} Iter: {}, Loss: {}\n".format(epoch, i, mloss[0].item())
+                results_file.write(write_str)
+            if ((i + 1) % 2000) == 0:
+                ckpt = {'epoch': epoch,
                             'iter': i,
                             'ema': ema.ema.state_dict() if ema else None,
                             'ema_updates': ema.updates if ema else 0,
-                            'model': RA_MMIR_model.module.state_dict() if is_distributed else RA_MMIR_model.state_dict(),
+                            'model':  RA_MMIR_model.state_dict(),
                             'optimizer': optimizer.state_dict()}
-                    torch.save(ckpt, weight_dir / 'att_emau_coco_feature.pt')
-                    if use_wandb:
-                        wandb.save(str(weight_dir / 'att_emau_coco_feature.pt'))
-                t5 = time_synchronized()
+                torch.save(ckpt, weight_dir / 'att_emau_coco_feature.pt')
+                if use_wandb:
+                    wandb.save(str(weight_dir / 'att_emau_coco_feature.pt'))
+            t5 = time_synchronized()
 
         torch.save(ckpt, weight_dir / 'last_att_emau_coco_feature.pt')
         change_lr(epoch, config, optimizer)
-    if rank > 0:
-        dist.destroy_process_group()
+
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_path', type=str, default="configs/coco_config.yaml", help="Path to the config file")
-    parser.add_argument('--local_rank', type=int, default=-1, help="Rank of the process incase of DDP")
+    # parser.add_argument('--local_rank', type=int, default=-1, help="Rank of the process incase of DDP")
     opt = parser.parse_args()
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -314,4 +325,4 @@ if __name__ == "__main__":
 
         wandb.init(name=config['train_params']['experiment_tag'], config=config, notes="train", project="superglue")
         use_wandb = True
-    train(config, opt.local_rank)
+    train(config)
