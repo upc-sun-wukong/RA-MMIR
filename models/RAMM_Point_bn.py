@@ -1,3 +1,5 @@
+import os
+
 import torch
 from .modules.cnn.vgg_att_backbone import VGGBackbone_att
 from torch.nn import DataParallel
@@ -92,7 +94,9 @@ class RAMM_Point(torch.nn.Module):
 
 
         # path = Path(__file__).parent / '.\\weights\\superpoint_coco_emau_feature_3090.pth'
-        path = Path(__file__).parent / '.\\weights\\superglue_cocohomo.pt' #换成这个试试
+        path = Path(__file__).parent / '.\\weights\\superglue_cocohomo.pt' #windows系统下 换成这个试试
+        # 构建权重文件的路径
+        path = os.path.join(Path(__file__).parent, 'weights', 'superglue_cocohomo.pt')
 
         self.load_state_dict(torch.load(str(path)) ,strict= False)  #忽略缺失参数
 
