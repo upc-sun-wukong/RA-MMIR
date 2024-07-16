@@ -267,6 +267,7 @@ def train(config, rank):
                 t5 = time_synchronized()
         if rank in [-1, 0]:
             print("\nDoing evaluation..")
+            # torch.cuda.empty_cache()
             with torch.no_grad():
                 if ema:
                     eval_superglue = ema.ema

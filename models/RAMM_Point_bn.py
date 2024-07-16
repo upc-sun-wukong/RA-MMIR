@@ -68,7 +68,7 @@ class RAMM_Point(torch.nn.Module):
     default_config = {
         'descriptor_dim': 256,
         'nms_radius': 4,
-        'keypoint_threshold': 0.005,
+        'keypoint_threshold': 0.5, #特征点置信度阈值原始为0.005
         'max_keypoints': -1,
         'remove_borders': 4,
     }
@@ -94,9 +94,9 @@ class RAMM_Point(torch.nn.Module):
 
 
         # path = Path(__file__).parent / '.\\weights\\superpoint_coco_emau_feature_3090.pth'
-        path = Path(__file__).parent / '.\\weights\\superglue_cocohomo.pt' #windows系统下 换成这个试试
+        # path = Path(__file__).parent / '.\\weights\\superglue_cocohomo.pt' #windows系统下路径正确，linux系统下错误
         # 构建权重文件的路径
-        path = os.path.join(Path(__file__).parent, 'weights', 'superglue_cocohomo.pt')
+        path = os.path.join(Path(__file__).parent, 'weights', 'superpoint_v1.pth')
 
         self.load_state_dict(torch.load(str(path)) ,strict= False)  #忽略缺失参数
 
@@ -133,7 +133,8 @@ class RAMM_Point(torch.nn.Module):
 
         pred = pred_mask.unsqueeze(0)
 
-        pred = torch.tensor(pred, dtype=torch.float32)
+        # pred = torch.tensor(pred, dtype=torch.float32)
+        pred = pred.clone().detach().float()
         pred = F.interpolate(pred, size=(60, 80), mode='bilinear')
 
         pred = pred.repeat_interleave(128, dim=1)

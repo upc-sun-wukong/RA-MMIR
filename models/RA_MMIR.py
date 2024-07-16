@@ -64,13 +64,14 @@ class KeypointEncoder(nn.Module):
 
 def attention(query, key, value):
     dim = query.shape[1]
-    scores = torch.einsum('bdhn,bdhm->bhnm', query, key) / dim**.5
+    scores = torch.einsum('bdhn,bdhm->bhnm', query, key) / dim**.5 ###就是这一行代码导致的显存泄露
     prob = torch.nn.functional.softmax(scores, dim=-1)
     return torch.einsum('bhnm,bdhm->bdhn', prob, value), prob
 
 
 class MultiHeadedAttention(nn.Module):
-    """ Multi-head attention to increase model expressivitiy"""
+    """ Multi-head attention to increase model expressivitiy
+    多头注意力机制用于增强模型的表达能力"""
     def __init__(self, num_heads: int, d_model: int):
         super().__init__()
         assert d_model % num_heads == 0
@@ -95,7 +96,7 @@ class AttentionalPropagation(nn.Module):
         nn.init.constant_(self.mlp[-1].bias, 0.0)
 
     def forward(self, x, source):
-        message = self.attn(x, source, source)
+        message = self.attn(x, source, source)     #就是这里！找到原因了！
         return self.mlp(torch.cat([x, message], dim=1))
 
 
@@ -199,7 +200,7 @@ class RA_MMIR(nn.Module):
         在一对关键点和描述符上运行SuperGlue;
         """
 
-        if kwargs.get('mode', 'test') == "train":
+        if kwargs.get('mode', 'test') == "train":   #测试环节，运行到此处kwargs是一个空的字典
             return self.forward_train(data)
 
         desc0, desc1 = data['descriptors0'], data['descriptors1']
