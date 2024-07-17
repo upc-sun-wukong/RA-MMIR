@@ -133,7 +133,7 @@ def homography_estimation(exper_name, keep_k_points=1000,
     """
     paths = get_paths(exper_name)
     correctness = []
-    for path in tqdm(paths):
+    for path in tqdm(paths, unbuffered= True):
         print(path)
         if ('npy' in path) or ('npz' in path):
             data = np.load(path,allow_pickle=True)

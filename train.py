@@ -156,7 +156,7 @@ def train(config):
         #     train_dataloader.sampler.set_epoch(epoch)
         pbar = enumerate(train_dataloader)
 
-        pbar = tqdm(pbar, total=num_batches)
+        pbar = tqdm(pbar, total=num_batches, unbuffered= True)
         optimizer.zero_grad()
         mloss = torch.zeros(6, device=device)
         print(('\n' + '%10s' * 9) % (
