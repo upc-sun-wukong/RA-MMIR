@@ -830,12 +830,19 @@ def weighted_score(results):
 def find_pred(inp, superpoint_model, superglue_model):
     pred = {}
     if 'keypoints0' not in inp:
-        pred0 = superpoint_model({'image': inp['image0']}, vi_or_ir = True ,curr_max_kp=-1, curr_key_thresh=0.005) #添加vi_or_ir = True后测试通过
+        pred0 = superpoint_model({'image': inp['image0']}, vi_or_ir = True ,curr_max_kp=-1, curr_key_thresh=0.5) #添加vi_or_ir = True后测试通过
         pred = {**pred, **{k+'0': v for k, v in pred0.items()}}
     if 'keypoints1' not in inp:
-        pred1 = superpoint_model({'image': inp['image1']}, vi_or_ir = True ,curr_max_kp=-1, curr_key_thresh=0.005)
+        pred1 = superpoint_model({'image': inp['image1']}, vi_or_ir = True ,curr_max_kp=-1, curr_key_thresh=0.5)
         pred = {**pred, **{k+'1': v for k, v in pred1.items()}}
 
+    # print(pred)
+    # keypoints0 和 keypoints1 的长度
+    num_keypoints0 = len(pred['keypoints0'][0])
+    num_keypoints1 = len(pred['keypoints1'][0])
+
+    print(f"图像0中的关键点数量: {num_keypoints0}")
+    print(f"图像1中的关键点数量: {num_keypoints1}")
     data = {**inp, **pred}
     for k in data:
         if isinstance(data[k], (list, tuple)):

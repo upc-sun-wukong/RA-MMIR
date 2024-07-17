@@ -87,7 +87,7 @@ if __name__ == '__main__':
              ' (\'-1\' keeps all keypoints)')
 
     parser.add_argument(
-        '--keypoint_threshold', type=float, default=0.05,
+        '--keypoint_threshold', type=float, default=0.5,
         help='SuperPoint keypoint detector confidence threshold')
 
     parser.add_argument(

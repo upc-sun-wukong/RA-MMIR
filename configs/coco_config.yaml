@@ -41,7 +41,7 @@ RA_MMIR_params:
 RAMM_Point_params:
   nms_radius: 4
   max_keypoints: 512
-  keypoint_threshold: 0.0
+  keypoint_threshold: 0.5
   remove_borders: 4
   using_bn: False
   grid_size: 8

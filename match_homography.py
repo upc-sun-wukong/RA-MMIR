@@ -48,11 +48,11 @@ if __name__ == '__main__':
         '--RA_MMIR', default='coco_homo',
         help='RA_MMIR weights')
     parser.add_argument(
-        '--max_keypoints', type=int, default=1024,
+        '--max_keypoints', type=int, default=512,
         help='Maximum number of keypoints detected by RAMM_Point'
              ' (\'-1\' keeps all keypoints)')
     parser.add_argument(
-        '--keypoint_threshold', type=float, default=0.005,
+        '--keypoint_threshold', type=float, default=0.5,
         help='RAMM_Point keypoint detector confidence threshold')
     parser.add_argument(
         '--nms_radius', type=int, default=4,

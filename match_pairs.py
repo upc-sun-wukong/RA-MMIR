@@ -103,11 +103,11 @@ if __name__ == '__main__':
         '--superglue', default='outdoor',                                                                              # att_emau
         help='SuperGlue weights')
     parser.add_argument(
-        '--max_keypoints', type=int, default=1024,
+        '--max_keypoints', type=int, default=512,
         help='Maximum number of keypoints detected by Superpoint'
              ' (\'-1\' keeps all keypoints)')
     parser.add_argument(
-        '--keypoint_threshold', type=float, default=0.005,
+        '--keypoint_threshold', type=float, default=0.5,
         help='SuperPoint keypoint detector confidence threshold')
     parser.add_argument(
         '--nms_radius', type=int, default=12,
