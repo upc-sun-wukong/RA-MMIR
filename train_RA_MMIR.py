@@ -139,7 +139,7 @@ def train(config, rank):
             train_dataloader.sampler.set_epoch(epoch)
         pbar = enumerate(train_dataloader)
         if rank in [-1, 0]:
-            pbar = tqdm(pbar, total=num_batches)
+            pbar = tqdm(pbar, total=num_batches,position=0)
         optimizer.zero_grad()
         mloss = torch.zeros(6, device=device)
         if rank in [-1, 0]: print(('\n' + '%10s' * 9) % ('Epoch', 'gpu_mem', 'Iteration', 'PosLoss', 'NegLoss', 'TotLoss', 'Dtime', 'Ptime', 'Mtime'))
