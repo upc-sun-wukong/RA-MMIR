@@ -11,7 +11,7 @@ from utils.common import (compute_pose_error, compute_epipolar_error,
                           estimate_pose, make_matching_plot,
                           error_colormap, AverageTimer, pose_auc, read_image,read_image_with_homography,
                           rotate_intrinsics, rotate_pose_inplane, compute_pixel_error,
-                          scale_intrinsics, weights_mapping, download_base_files, download_test_images)
+                          scale_intrinsics, weights_mapping, download_base_files)
 from utils.preprocess_utils import torch_find_matches
 
 torch.set_grad_enabled(False)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         help='Maximum number of keypoints detected by RAMM_Point'
              ' (\'-1\' keeps all keypoints)')
     parser.add_argument(
-        '--keypoint_threshold', type=float, default=0.5,
+        '--keypoint_threshold', type=float, default=0.45,
         help='RAMM_Point keypoint detector confidence threshold')
     parser.add_argument(
         '--nms_radius', type=int, default=4,
@@ -98,6 +98,7 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
     print(opt)
+    print(f"RA_MMIR value: {opt.RA_MMIR}")
 
     assert not (opt.opencv_display and not opt.viz), 'Must use --viz with --opencv_display'
     assert not (opt.opencv_display and not opt.fast_viz), 'Cannot use --opencv_display without --fast_viz'
@@ -125,7 +126,7 @@ if __name__ == '__main__':
     if opt.shuffle:
         random.Random(0).shuffle(homo_pairs)
     download_base_files()
-    download_test_images()
+    # download_test_images()
     # Load the RAMM_Point and RA_MMIR models.
     device = 'cuda' if torch.cuda.is_available() and not opt.force_cpu else 'cpu'
     print('Running inference on device \"{}\"'.format(device))
