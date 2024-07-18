@@ -18,7 +18,7 @@ class COCO_loader(Dataset):
         self.apply_aug = dataset_params['apply_color_aug']
         self.images_path = os.path.join(self.dataset_path, "{}2017".format(typ))
         # self.json_path = os.path.join(self.dataset_path, 'annotations', 'instances_{}2017.json'.format(typ))
-        self.json_path = os.path.join(self.dataset_path, 'annotations', 'instances_217traintest_{}2017.json'.format(typ))
+        self.json_path = os.path.join(self.dataset_path, 'annotations', 'instances_{}2017.json'.format(typ))
         self.coco_json = coco.COCO(self.json_path)
         self.images = self.coco_json.getImgIds()
 
