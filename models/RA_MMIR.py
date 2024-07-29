@@ -5,7 +5,7 @@ from tps_stn.single_visualize_kpts import TPS
 import numpy as np
 import cv2
 import matplotlib
-# matplotlib.use('TkAgg')
+matplotlib.use('TkAgg')
 from .ts_scatter import scatter_mean
 
 import os

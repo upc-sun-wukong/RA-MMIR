@@ -261,7 +261,7 @@ def train(config, rank):
                             'ema_updates': ema.updates if ema else 0,
                             'model': RA_MMIR_model.module.state_dict() if is_distributed else RA_MMIR_model.state_dict(),
                             'optimizer': optimizer.state_dict()}
-                    torch.save(ckpt, weight_dir / 'att_emau_coco_feature.pt')
+                    torch.save(ckpt, weight_dir / 'att_emau_coco_feature.pt')     #每2000个迭代保存一次中间检查点
                     if use_wandb:
                         wandb.save(str(weight_dir / 'att_emau_coco_feature.pt'))
                 t5 = time_synchronized()
@@ -280,7 +280,7 @@ def train(config, rank):
                     'ema_updates': ema.updates if ema else 0,
                     'model': RA_MMIR_model.module.state_dict() if is_distributed else RA_MMIR_model.state_dict(),
                     'optimizer': optimizer.state_dict(), 'metrics': results}
-            torch.save(ckpt, weight_dir / 'last_att_emau_coco_feature.pt')
+            torch.save(ckpt, weight_dir / 'last_att_emau_coco_feature.pt')    #每个epoch结束时保存了一个 "last" 检查点
             if use_wandb:
                 wandb.save(str(weight_dir / 'last_att_emau_coco_feature.pt'))
                 results_file.flush()
@@ -288,7 +288,7 @@ def train(config, rank):
             if results['weight_score'] > best_val_score:
                 best_val_score = results['weight_score']
                 print("Saving best model at epoch {} with score {}".format(epoch, best_val_score))
-                torch.save(ckpt, weight_dir / 'best_att_emau_coco_feature.pt')
+                torch.save(ckpt, weight_dir / 'best_att_emau_coco_feature.pt')    #最佳检查点
                 if use_wandb:
                     wandb.save(str(weight_dir / 'best_att_emau_coco_feature.pt'))
         change_lr(epoch, config, optimizer)

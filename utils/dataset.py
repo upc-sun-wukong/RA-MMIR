@@ -44,12 +44,13 @@ class COCO_loader(Dataset):
         file_name = self.coco_json.loadImgs(ids=[img_id])[0]['file_name']
         file_path = os.path.join(self.images_path, file_name)
 
-        image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+        image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)   #读取图像，使用cv2.IMREAD_GRAYSCALE读取为灰度图像
 
         if self.aspect_resize:
             image = resize_aspect_ratio(image, self.config['image_height'], self.config['image_width'])
             resize = False
         height, width = image.shape[0:2]
+        #先生成一个透视变换矩阵homo_matrix，然后应用这个矩阵创建一个变形的图像
         homo_matrix = get_perspective_mat(self.aug_params['patch_ratio'], width//2, height//2, self.aug_params['perspective_x'], self.aug_params['perspective_y'], self.aug_params['shear_ratio'], self.aug_params['shear_angle'], self.aug_params['rotation_angle'], self.aug_params['scale'], self.aug_params['translation'])
         warped_image = cv2.warpPerspective(image.copy(), homo_matrix, (width, height))
         if resize:
@@ -60,9 +61,18 @@ class COCO_loader(Dataset):
             warped_resized = warped_image
         if self.apply_aug:
             orig_resized, warped_resized = self.apply_augmentations(orig_resized, warped_resized)
+        #图像尺寸可能变化self.config['image_height']，所以要调整单应性矩阵
         homo_matrix = scale_homography(homo_matrix, height, width, self.config['image_height'], self.config['image_width']).astype(np.float32)
-        orig_resized = np.expand_dims(orig_resized, 0).astype(np.float32) / 255.0
+        orig_resized = np.expand_dims(orig_resized, 0).astype(np.float32) / 255.0 #将图像数据转换为浮点型，标准化到 0-1 范围，并添加一个通道维度。
         warped_resized = np.expand_dims(warped_resized, 0).astype(np.float32) / 255.0
+        """
+        浮点数允许更精确的计算和梯度传播
+        标准化是为了：[0,1]
+            统一尺度：不同图像可能有不同的亮度范围，标准化有助于将所有图像映射到相同的范围。
+            提高训练稳定性：较小的输入值通常能让神经网络更容易学习和收敛。
+            减少计算误差：避免在网络计算中出现过大或过小的数值。
+        增加一个通道(1, height, width)，用于深度学习
+        """
 
         return orig_resized, warped_resized, homo_matrix
 

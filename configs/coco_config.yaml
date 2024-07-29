@@ -7,7 +7,7 @@ train_params:
   num_epochs: 90
   sync_bn: false                  # whether to sync batch norm layer in distributed training setting
   restore_opt: true               # whether to restore the optimizer states while resuming the training from given ckpt
-  num_workers: 0                  # number of dataloader workers
+  num_workers: 2                  # number of dataloader workers
   log_interval: 50 
   debug: true                     # if true plots the matched keypoints for one image in every batch during training
   debug_path: "debug"             # folder where debug plots should be stored

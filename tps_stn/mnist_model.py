@@ -6,9 +6,9 @@ import itertools
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-from .grid_sample import grid_sample
+from grid_sample import grid_sample
 from torch.autograd import Variable
-from .tps_grid_gen import TPSGridGen
+from tps_grid_gen import TPSGridGen
 
 class CNN(nn.Module):
     """卷积神经网络"""

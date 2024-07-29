@@ -20,7 +20,8 @@ import random
 from copy import deepcopy
 from .preprocess_utils import scale_homography, torch_find_matches
 
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
+matplotlib.use('TkAgg')
 
 weights_mapping = {
         'RAMM-Point': Path(__file__).parent.parent / 'models/weights/RAMM-Point.pth',
@@ -541,8 +542,11 @@ def plot_image_pair(imgs, dpi=100, size=6, pad=.5):
     figsize = (size*n, size*3/4) if size is not None else None
     _, ax = plt.subplots(1, n, figsize=figsize, dpi=dpi)
     for i in range(n):
-        ax[i].imshow(imgs[i], cmap=plt.get_cmap('gray'), vmin=0, vmax=255)
-        ax[i].get_yaxis().set_ticks([])
+        img_2d = np.squeeze(imgs[i]) #三维转为二维数组
+        if img_2d.dtype != np.uint8:
+            img_2d = (img_2d * 255).astype(np.uint8)
+        ax[i].imshow(img_2d, cmap=plt.get_cmap('gray'), vmin=0, vmax=255) # 使用灰度颜色映射，并设置颜色范围
+        ax[i].get_yaxis().set_ticks([])   # 移除 y 轴刻度
         ax[i].get_xaxis().set_ticks([])
         for spine in ax[i].spines.values():  # remove frame
             spine.set_visible(False)
@@ -588,7 +592,6 @@ def make_matching_plot(image0, image1, kpts0, kpts1, mkpts0, mkpts1,
     #     plot_keypoints(kpts0, kpts1, color='k', ps=4)
     #     plot_keypoints(kpts0, kpts1, color='w', ps=2)
     # plot_matches(mkpts0, mkpts1, color)
-    #
     # fig = plt.gcf()
     # txt_color = 'k' if image0[:100, :150].mean() > 200 else 'w'
     # fig.text(
@@ -842,6 +845,18 @@ def find_pred(inp, superpoint_model, superglue_model):
 
     print(f"图像0中的关键点数量: {num_keypoints0}")
     print(f"图像1中的关键点数量: {num_keypoints1}")
+    # 可视化特征点
+    image0 = inp['image0'][0].cpu().numpy()  # 假设图像在第0个位置并在CPU上
+    image1 = inp['image1'][0].cpu().numpy()  # 假设图像在第0个位置并在CPU上
+
+    keypoints0 = pred['keypoints0'][0].cpu().numpy()
+    keypoints1 = pred['keypoints1'][0].cpu().numpy()
+
+    plt.figure(figsize=(10, 5))         #查看图像的特征点
+    plot_image_pair([image0, image1])
+    plot_keypoints(keypoints0, keypoints1, color='r', ps=1)
+    plt.show()
+
     data = {**inp, **pred}
     for k in data:
         if isinstance(data[k], (list, tuple)):
