@@ -840,22 +840,22 @@ def find_pred(inp, superpoint_model, superglue_model):
 
     # print(pred)
     # keypoints0 和 keypoints1 的长度
-    num_keypoints0 = len(pred['keypoints0'][0])
-    num_keypoints1 = len(pred['keypoints1'][0])
+    # num_keypoints0 = len(pred['keypoints0'][0])
+    # num_keypoints1 = len(pred['keypoints1'][0])
 
-    print(f"图像0中的关键点数量: {num_keypoints0}")
-    print(f"图像1中的关键点数量: {num_keypoints1}")
-    # 可视化特征点
-    image0 = inp['image0'][0].cpu().numpy()  # 假设图像在第0个位置并在CPU上
-    image1 = inp['image1'][0].cpu().numpy()  # 假设图像在第0个位置并在CPU上
-
-    keypoints0 = pred['keypoints0'][0].cpu().numpy()
-    keypoints1 = pred['keypoints1'][0].cpu().numpy()
-
-    plt.figure(figsize=(10, 5))         #查看图像的特征点
-    plot_image_pair([image0, image1])
-    plot_keypoints(keypoints0, keypoints1, color='r', ps=1)
-    plt.show()
+    # print(f"图像0中的关键点数量: {num_keypoints0}")
+    # print(f"图像1中的关键点数量: {num_keypoints1}")
+    # # 可视化特征点
+    # image0 = inp['image0'][0].cpu().numpy()  # 假设图像在第0个位置并在CPU上
+    # image1 = inp['image1'][0].cpu().numpy()  # 假设图像在第0个位置并在CPU上
+    #
+    # keypoints0 = pred['keypoints0'][0].cpu().numpy()
+    # keypoints1 = pred['keypoints1'][0].cpu().numpy()
+    #
+    # plt.figure(figsize=(10, 5))         #查看图像的特征点
+    # plot_image_pair([image0, image1])
+    # plot_keypoints(keypoints0, keypoints1, color='r', ps=1)
+    # plt.show()
 
     data = {**inp, **pred}
     for k in data:

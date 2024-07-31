@@ -81,8 +81,10 @@ class COCO_valloader(Dataset):
         super(COCO_valloader, self).__init__()
         self.config = dataset_params
         self.dataset_path = dataset_params['dataset_path']
-        self.images_path = os.path.join(self.dataset_path, "val2017")
+        # self.images_path = os.path.join(self.dataset_path, "val2017")
+        self.images_path = os.path.join(self.dataset_path, "all_image")
         self.txt_path = str(Path(__file__).parent.parent / 'assets/coco_val_images_homo.txt')
+        # self.txt_path = str(Path(__file__).parent.parent / 'assets/coco_test_images_homo.txt')
         with open(self.txt_path, 'r') as f:
             self.image_info = f.readlines()
 
